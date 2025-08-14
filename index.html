@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Daily Task Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-dark:#07060a;--panel:rgba(10,10,12,0.55);--card:rgba(12,12,14,0.6);--muted:#aeb3b8;--accent-white:rgba(255,255,255,0.95);
+  --danger:#ff6b6b;--glass-border:rgba(255,255,255,0.06);--gradient-speed:12s;--neon-glow-color:#b76cff;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:var(--accent-white);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:22px;
+  background:linear-gradient(120deg,#7b3cff,#9554ff,#2f8bff,#3ad6a7,#7b3cff);background-size:400% 400%;
+  overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;opacity:0;
+  animation:pageFadeIn 900ms ease forwards,gradientShift var(--gradient-speed) ease infinite;
+}
+@keyframes gradientShift{
+  0%{background-position:0% 50%}25%{background-position:50% 50%}50%{background-position:100% 50%}
+  75%{background-position:50% 50%}100%{background-position:0% 50%}
+}
+@keyframes pageFadeIn{to{opacity:1}}
+.back-overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.55));pointer-events:none;z-index:0}
+.wrap{width:100%;max-width:920px;z-index:2;display:flex;flex-direction:column;gap:12px;align-items:center}
+header{
+  width:100%;display:flex;justify-content:center;align-items:center;padding:10px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.15));border:1px solid var(--glass-border);
+  box-shadow:0 8px 40px rgba(0,0,0,0.5);transform:translateY(-20px);opacity:0;
+  animation:headerIn 700ms cubic-bezier(.2,.9,.3,1) 200ms forwards;
+}
+@keyframes headerIn{to{transform:none;opacity:1}}
+#day-time-bar{
+  font-family:'Inter',monospace;font-weight:600;letter-spacing:.6px;font-size:18px;padding:8px 16px;border-radius:10px;position:relative;z-index:3;color:#fff;
+}
+#day-time-bar::before{
+  content:'';position:absolute;inset:-6px;z-index:-1;border-radius:12px;filter:blur(14px) saturate(1.4);opacity:.55;
+  background:linear-gradient(120deg,#7b3cff,#9554ff,#2f8bff,#3ad6a7);background-size:400% 400%;
+  animation:gradientShift var(--gradient-speed) ease infinite;pointer-events:none;
+}
+h1{
+  margin:6px 0 0 0;align-self:flex-start;color:#fff;text-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:24px;
+  transform:translateY(-10px);opacity:0;animation:titleIn 700ms cubic-bezier(.2,.9,.3,1) 300ms forwards;
+}
+@keyframes titleIn{to{transform:none;opacity:1}}
+.card{
+  width:100%;max-width:820px;background:rgba(6,6,8,0.38);border-radius:14px;padding:18px;border:1px solid var(--glass-border);
+  box-shadow:0 18px 60px rgba(12,8,30,0.6),0 6px 18px rgba(0,0,0,0.5);transform:translateY(18px);opacity:0;
+  animation:cardIn 700ms cubic-bezier(.2,.9,.3,1) 380ms forwards;
+}
+@keyframes cardIn{to{transform:none;opacity:1}}
+.task-input{display:flex;gap:10px;align-items:center}
+.task-input input{
+  flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.03);
+  color:var(--accent-white);font-size:15px;outline:none;transition:box-shadow .18s ease,transform .12s ease;caret-color:#fff;
+}
+.task-input input::placeholder{color:rgba(255,255,255,0.5)}
+.task-input input:focus{box-shadow:0 6px 24px rgba(0,0,0,0.4),0 0 18px rgba(255,255,255,0.04);transform:translateY(-1px)}
+.add-btn{
+  padding:11px 16px;border-radius:10px;border:none;font-weight:700;cursor:pointer;
+  background:linear-gradient(90deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));color:var(--accent-white);
+  transition:transform .12s,box-shadow .12s,opacity .12s;position:relative;overflow:visible;
+}
+.add-btn::before{
+  content:'';position:absolute;inset:-8px;z-index:-1;border-radius:14px;background:linear-gradient(120deg,#7b3cff,#2f8bff,#3ad6a7);
+  background-size:400% 400%;filter:blur(14px) saturate(1.2);opacity:.28;animation:gradientShift var(--gradient-speed) ease infinite;
+}
+.add-btn:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,0.4)}
+.task-list{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.task{
+  display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.12));border:1px solid rgba(255,255,255,0.03);
+  box-shadow:0 8px 30px rgba(0,0,0,0.45);transform-origin:center;opacity:0;transform:translateY(12px) scale(0.985);
+  animation:taskEnter 360ms cubic-bezier(.2,.9,.3,1) forwards;
+}
+@keyframes taskEnter{to{opacity:1;transform:none}}
+.chk{
+  width:22px;height:22px;border-radius:6px;border:2px solid rgba(255,255,255,0.06);display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .22s cubic-bezier(.2,.9,.3,1);flex-shrink:0;background:rgba(255,255,255,0.01);
+}
+.chk.checked{
+  background:linear-gradient(120deg,#7b3cff,#3ad6a7);border-color:rgba(0,0,0,0.3);
+  box-shadow:0 6px 18px rgba(0,0,0,0.25),0 0 12px rgba(128,90,255,0.12);
+}
+.chk svg{width:14px;height:14px;fill:rgba(10,10,12,0.95);transform:scale(.9)}
+.task-text{flex:1;font-size:15px;color:var(--accent-white);position:relative;cursor:pointer;user-select:none;transition:color .28s ease,opacity .28s ease}
+.task-text::after{
+  content:'';position:absolute;height:2px;left:0;right:0;top:50%;background:linear-gradient(90deg,rgba(255,255,255,0.18),rgba(255,255,255,0.06));
+  transform-origin:left;transform:scaleX(0);opacity:0;transition:transform .42s cubic-bezier(.2,.9,.3,1) .18s,opacity .18s .18s;
+}
+.task.striking .task-text{color:var(--muted);opacity:.9}
+.task.striking .task-text::after{transform:scaleX(1);opacity:1;transition-delay:.28s}
+.task.completed .task-text{color:var(--muted);opacity:.75}
+.task.completed .task-text::after{transform:scaleX(1);opacity:1;transition-delay:0s}
+.actions{display:flex;gap:8px;align-items:center}
+.btn-icon{background:transparent;border:none;color:var(--accent-white);padding:6px;border-radius:8px;cursor:pointer;font-size:16px;transition:transform .12s ease,background .12s}
+.btn-icon:hover{transform:scale(1.06);background:rgba(255,255,255,0.03)}
+.btn-delete{color:var(--danger)}
+.progress-wrap{
+  margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.12));border:1px solid var(--glass-border);
+  box-shadow:0 10px 30px rgba(0,0,0,0.45);position:relative;overflow:hidden;
+}
+.progress-wrap::before{
+  content:'';position:absolute;inset:-8px;z-index:-1;background:linear-gradient(120deg,#7b3cff,#9554ff,#2f8bff,#3ad6a7);
+  background-size:400% 400%;filter:blur(18px) saturate(1.2);opacity:.22;animation:gradientShift var(--gradient-speed) ease infinite;
+}
+.progress-left{font-weight:700;font-family:'Inter',monospace;color:#fff}
+.progress-msg{color:#fff;font-weight:600;transform:translateY(0);opacity:1;transition:transform .28s ease,opacity .28s ease,text-shadow .28s ease}
+.msg-anim{transform:translateY(6px);opacity:0}
+.neon-glow{
+  text-shadow:0 0 6px var(--neon-glow-color),0 0 12px var(--neon-glow-color),0 0 22px rgba(0,0,0,0.15),0 0 40px rgba(0,0,0,0.15);
+}
+.confirm-overlay{
+  position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;z-index:50;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px);
+}
+.confirm-overlay.show{display:flex}
+.confirm-sheet{
+  width:100%;max-width:820px;margin:0 16px 18px 16px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.18));border:1px solid var(--glass-border);
+  box-shadow:0 18px 60px rgba(12,8,30,0.6),0 6px 18px rgba(0,0,0,0.5);transform:translateY(26px);opacity:0;
+  transition:transform 300ms cubic-bezier(.2,.9,.3,1),opacity 300ms;
+}
+.confirm-overlay.show .confirm-sheet{transform:translateY(0);opacity:1}
+.confirm-content{padding:16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.confirm-text{color:var(--accent-white);font-weight:600;letter-spacing:.2px}
+.confirm-actions{display:flex;gap:8px;align-items:center}
+.btn-secondary,.btn-primary,.btn-danger{
+  appearance:none;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.04);color:var(--accent-white);
+  padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+}
+.btn-secondary:hover,.btn-primary:hover,.btn-danger:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.35)}
+.btn-primary{background:linear-gradient(90deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))}
+.btn-danger{border-color:rgba(255,0,0,0.25);color:#ffd3d3;background:linear-gradient(90deg,rgba(255,0,0,0.08),rgba(255,0,0,0.03))}
+@media (max-width:640px){
+  body{padding:14px}.card{padding:14px}h1{font-size:18px}#day-time-bar{font-size:14px;padding:6px 10px}
+}
+</style>
+</head>
+<body>
+  <div class="back-overlay" aria-hidden="true"></div>
+  <div class="wrap" role="main">
+    <header><div id="day-time-bar">Loading...</div></header>
+    <h1>Daily Task Tracker</h1>
+    <main class="card" role="application" aria-labelledby="mainTitle">
+      <div class="task-input" aria-hidden="false">
+        <input id="taskInput" placeholder="Write today's task e.g. 4 hour study..." autocomplete="off" />
+        <button id="addBtn" class="add-btn" aria-label="Add task">Add</button>
+      </div>
+      <div class="task-list" id="taskList" aria-live="polite" style="margin-top:14px;"></div>
+    </main>
+    <div class="progress-wrap" id="progressWrap" aria-live="polite" aria-atomic="true">
+      <div class="progress-left" id="progressCount">0 Pending Task(s)</div>
+      <div class="progress-msg" id="progressMsg">Let's get started!</div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirmOverlay" aria-hidden="true">
+    <div class="confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="confirm-content">
+        <div class="confirm-text" id="confirmTitle">Delete this task?</div>
+        <div class="confirm-actions">
+          <button class="btn-secondary" id="confirmCancelBtn" aria-label="Cancel deletion">Cancel</button>
+          <button class="btn-danger" id="confirmDeleteBtn" aria-label="Confirm deletion">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const TASKS_KEY='dt_tasks_v1';
+const PERIOD_KEY='dt_period_v2';      // stores the current “task day” label based on 2:10 AM boundary
+let tasks=[];
+let currentPeriodLabel=null;
+
+const dayTimeEl=document.getElementById('day-time-bar');
+const taskListEl=document.getElementById('taskList');
+const inputEl=document.getElementById('taskInput');
+const addBtn=document.getElementById('addBtn');
+const progressCountEl=document.getElementById('progressCount');
+const progressMsgEl=document.getElementById('progressMsg');
+
+const confirmOverlay=document.getElementById('confirmOverlay');
+const confirmDeleteBtn=document.getElementById('confirmDeleteBtn');
+const confirmCancelBtn=document.getElementById('confirmCancelBtn');
+let pendingDeleteIndex=null;
+
+function at210(today=new Date()){
+  const d=new Date(today);
+  d.setHours(2,10,0,0);
+  return d;
+}
+function periodLabel(now=new Date()){
+  const cutoff=at210(now);
+  return (now>=cutoff? now : new Date(now.getFullYear(),now.getMonth(),now.getDate()-1)).toDateString();
+}
+function nextResetTime(now=new Date()){
+  const t=at210(now);
+  return now<t ? t : new Date(t.getTime()+24*60*60*1000);
+}
+
+function updateDayTime(){
+  const now=new Date();
+  const dayName=now.toLocaleDateString(undefined,{weekday:'long'});
+  let time=now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',hour12:true});
+  time=time.replace(/^0(?=\d)/,'');
+  dayTimeEl.textContent=`${dayName} | ${time}`;
+}
+setInterval(updateDayTime,1000);
+updateDayTime();
+
+function loadTasks(){
+  try{
+    const savedPeriod=localStorage.getItem(PERIOD_KEY);
+    const nowPeriod=periodLabel();
+    currentPeriodLabel=nowPeriod;
+    if(savedPeriod!==nowPeriod){
+      localStorage.setItem(PERIOD_KEY,nowPeriod);
+      localStorage.removeItem(TASKS_KEY);
+      tasks=[];
+    }else{
+      tasks=JSON.parse(localStorage.getItem(TASKS_KEY)||'[]');
+    }
+  }catch(e){ tasks=[]; }
+  renderTasks();
+}
+function saveTasks(){
+  try{
+    localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));
+    localStorage.setItem(PERIOD_KEY,currentPeriodLabel||periodLabel());
+  }catch(e){}
+}
+
+function scheduleDailyReset(){
+  const now=new Date();
+  const target=nextResetTime(now);
+  const ms=target-now;
+  setTimeout(()=>{ doDailyReset(); setInterval(doDailyReset,24*60*60*1000); }, ms);
+}
+function doDailyReset(){
+  currentPeriodLabel=periodLabel(new Date());
+  tasks=[];
+  saveTasks();
+  renderTasks();
+  showProgressMessage("New day — fresh start!",0210);
+}
+
+addBtn.addEventListener('click',addTaskFromInput);
+inputEl.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ addTaskFromInput(); }});
+
+function addTaskFromInput(){
+  const txt=inputEl.value.trim();
+  if(!txt) return;
+  tasks.push({id:Date.now()+Math.random(),text:txt,completed:false});
+  inputEl.value='';
+  saveTasks();
+  renderTasks(true);
+  showProgressMessage(null);
+}
+
+function renderTasks(animateNew=false){
+  taskListEl.innerHTML='';
+  tasks.forEach((t,idx)=>{
+    const item=document.createElement('div');
+    item.className='task';
+    item.dataset.idx=idx;
+
+    const chk=document.createElement('button');
+    chk.className='chk'+(t.completed?' checked':'');
+    chk.setAttribute('aria-label',t.completed?'Mark as not done':'Mark as complete');
+    chk.innerHTML=t.completed?'<svg viewBox="0 0 24 24"><path d="M20.3 5.7a1 1 0 0 0-1.4-1.4L9 14.2 5.1 10.3A1 1 0 0 0 3.7 11.7l4.1 4.1a1 1 0 0 0 1.4 0l11.1-11.1z"/></svg>':'';
+    chk.onclick=(ev)=>{ ev.stopPropagation(); handleToggleComplete(idx,item); };
+    item.appendChild(chk);
+
+    const txt=document.createElement('div');
+    txt.className='task-text';
+    txt.textContent=t.text;
+    txt.onclick=()=>handleToggleComplete(idx,item);
+    item.appendChild(txt);
+
+    const actions=document.createElement('div');
+    actions.className='actions';
+    const del=document.createElement('button');
+    del.className='btn-icon btn-delete';
+    del.title='Delete task';
+    del.innerHTML='✖';
+    del.onclick=(ev)=>{ ev.stopPropagation(); requestDelete(idx); };
+    actions.appendChild(del);
+    item.appendChild(actions);
+
+    taskListEl.appendChild(item);
+
+    if(animateNew && idx===tasks.length-1){
+      item.style.transform='translateY(18px) scale(.985)';item.style.opacity='0';
+      requestAnimationFrame(()=>{ item.style.transition='transform 420ms cubic-bezier(.2,.9,.3,1), opacity 420ms'; item.style.transform=''; item.style.opacity=''; });
+    }else{
+      item.style.animationDelay=(idx*25)+'ms';
+    }
+
+    if(t.completed){
+      item.classList.add('completed');
+      const chkBtn=item.querySelector('.chk'); if(chkBtn) chkBtn.classList.add('checked');
+      item.classList.add('striking'); setTimeout(()=>{ item.classList.add('completed'); item.classList.remove('striking'); },380);
+    }
+  });
+  updateProgressAnimated();
+}
+
+function handleToggleComplete(idx,itemEl){
+  const t=tasks[idx];
+  if(t.completed){
+    t.completed=false; saveTasks(); renderTasks(); return;
+  }
+  itemEl.classList.add('striking');
+  setTimeout(()=>{
+    t.completed=true; saveTasks(); itemEl.classList.remove('striking'); itemEl.classList.add('completed');
+    const chk=itemEl.querySelector('.chk'); if(chk) chk.classList.add('checked');
+    updateProgressAnimated();
+  },420);
+}
+
+function requestDelete(idx){ pendingDeleteIndex=idx; openConfirm(); }
+function openConfirm(){ confirmOverlay.classList.add('show'); confirmOverlay.setAttribute('aria-hidden','false'); }
+function closeConfirm(){ confirmOverlay.classList.remove('show'); confirmOverlay.setAttribute('aria-hidden','true'); pendingDeleteIndex=null; }
+confirmCancelBtn.addEventListener('click',closeConfirm);
+confirmDeleteBtn.addEventListener('click',()=>{
+  if(pendingDeleteIndex===null||pendingDeleteIndex===undefined) return closeConfirm();
+  tasks.splice(pendingDeleteIndex,1); saveTasks(); renderTasks(); showProgressMessage(null); closeConfirm();
+});
+confirmOverlay.addEventListener('click',(e)=>{ if(e.target===confirmOverlay) closeConfirm(); });
+window.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&confirmOverlay.classList.contains('show')) closeConfirm(); });
+
+function computeMessage(total,left,done){
+  if(total===0) return "Let's get started!";
+  const pct=Math.round((done/total)*100);
+  if(pct===100) return "You did it! 🎉";
+  if(pct>=90) return "Just one more step!";
+  if(pct>=75) return "So close now!";
+  if(pct>=50) return "Halfway there!";
+  if(pct>=25) return "Making steady progress...";
+  if(pct>0) return "A good start!";
+  return "Let's get started!";
+}
+function applyNeonPulse(el,color='#b76cff',pulseMs=900){
+  try{ document.documentElement.style.setProperty('--neon-glow-color',color); el.classList.add('neon-glow'); setTimeout(()=>{ el.classList.remove('neon-glow'); },pulseMs); }catch(e){}
+}
+let progressMsgTimeout;
+function cancelProgressAnim(){ if(progressMsgTimeout){ clearTimeout(progressMsgTimeout); progressMsgTimeout=null; } }
+function showProgressMessage(custom,hold=900){
+  cancelProgressAnim();
+  const total=tasks.length,done=tasks.filter(t=>t.completed).length,left=total-done;
+  progressCountEl.textContent=`${left} Pending Task(s)`;
+  const message=custom??computeMessage(total,left,done);
+  const currentText=progressMsgEl.textContent||'';
+  progressMsgEl.classList.add('msg-anim');
+  setTimeout(()=>{
+    progressMsgEl.textContent=message; progressMsgEl.classList.remove('msg-anim');
+    const pct=total===0?0:Math.round((done/total)*100);
+    let neonColor='#b76cff'; if(pct>=90) neonColor='#4eff7a'; else if(pct>=50) neonColor='#4da3ff'; else if(pct>=25) neonColor='#a36bff';
+    if(currentText!==message) applyNeonPulse(progressMsgEl,neonColor,950);
+    if(hold>0){ progressMsgTimeout=setTimeout(()=>{ progressMsgTimeout=null; },hold); }
+  },180);
+}
+function updateProgressAnimated(){
+  const total=tasks.length,done=tasks.filter(t=>t.completed).length,left=total-done;
+  progressCountEl.textContent=`${left} Pending Task(s)`;
+  showProgressMessage(null,900);
+}
+
+loadTasks();
+scheduleDailyReset();
+window.addEventListener('beforeunload',()=>{ saveTasks(); });
+console.log('%cDaily Task Tracker — 2:10 AM reset, Pending kept, in-app delete','color:#b76cff;font-weight:700;');
+</script>
+</body>
+</html>
